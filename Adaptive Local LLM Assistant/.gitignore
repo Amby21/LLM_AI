@@ -1,0 +1,63 @@
+# 🔷 Python cache & compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# 🔷 Virtual environments
+venv/
+.env/
+.envrc
+.venv/
+
+# 🔷 Environment variables
+.env
+*.env
+
+# 🔷 Logs
+*.log
+
+# 🔷 Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# 🔷 OS files
+.DS_Store
+Thumbs.db
+
+# 🔷 VS Code
+.vscode/
+
+# 🔷 PyCharm / IntelliJ
+.idea/
+
+# 🔷 Build / distribution
+build/
+dist/
+*.egg-info/
+
+# 🔷 Streamlit cache
+.streamlit/
+
+# 🔷 Model / data files (important for LLM projects)
+models/
+data/
+*.bin
+*.pt
+*.onnx
+
+# 🔷 FAISS index files
+*.faiss
+*.index
+
+# 🔷 Temporary files
+tmp/
+temp/
+*.tmp
+
+# 🔷 Secrets / keys
+*.key
+*.pem
+
+# 🔷 Logs / outputs
+outputs/
+results/
