@@ -1,0 +1,14 @@
+# docker-compose.yml
+version: "3.9"
+
+services:
+  governancegpt:
+    build: .
+    ports:
+      - "8000:8000"       # host:container
+    env_file:
+      - .env              # loads your API key automatically
+    volumes:
+      - ./governance.db:/app/governance.db    # persists DB between restarts
+      - ./mlflow:/app/mlflow                  # persists MLFlow runs
+    restart: unless-stopped

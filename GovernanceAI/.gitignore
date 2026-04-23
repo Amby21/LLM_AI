@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.pyc
+*.db
+mlflow/
+chroma_db/
+.pipenv
+test_agent.py
