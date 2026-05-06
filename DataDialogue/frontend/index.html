@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DataDialogue</title>
+  <style>
+    /* ── Reset & Base ───────────────────────────────────── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont,
+                   'Segoe UI', sans-serif;
+      background: #0a0e1a;
+      color: #e2e8f0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    header {
+      background: #111827;
+      border-bottom: 1px solid #1e293b;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #38bdf8;
+    }
+    header span {
+      font-size: 12px;
+      color: #475569;
+    }
+    .db-badge {
+      background: #0f2942;
+      border: 1px solid #1e4976;
+      color: #38bdf8;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .db-stats {
+      font-size: 11px;
+      color: #475569;
+      margin-left: 8px;
+    }
+
+    /* ── Layout ─────────────────────────────────────────── */
+    .app {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Left Sidebar — Schema Explorer ─────────────────── */
+    .sidebar {
+      width: 260px;
+      background: #111827;
+      border-right: 1px solid #1e293b;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      padding: 12px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #475569;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .schema-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .table-item {
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 4px;
+    }
+
+    .table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      cursor: pointer;
+      background: #0a0e1a;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      transition: border-color 0.2s;
+      user-select: none;
+    }
+    .table-header:hover { border-color: #38bdf8; }
+    .table-header.open  { border-radius: 8px 8px 0 0; }
+
+    .table-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+    .table-count {
+      font-size: 10px;
+      color: #475569;
+    }
+    .table-arrow {
+      font-size: 10px;
+      color: #475569;
+      transition: transform 0.2s;
+    }
+    .table-header.open .table-arrow { transform: rotate(90deg); }
+
+    .column-list {
+      display: none;
+      background: #0d1424;
+      border: 1px solid #1e293b;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      padding: 6px 0;
+    }
+    .column-list.open { display: block; }
+
+    .column-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 3px 12px;
+      font-size: 11px;
+    }
+    .col-name { color: #94a3b8; }
+    .col-type {
+      color: #475569;
+      font-family: monospace;
+      font-size: 10px;
+    }
+
+    /* ── Chat Area ───────────────────────────────────────── */
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Welcome */
+    .welcome {
+      margin: auto;
+      text-align: center;
+      max-width: 520px;
+    }
+    .welcome .icon  { font-size: 48px; margin-bottom: 12px; }
+    .welcome h2     { font-size: 22px; font-weight: 700; color: #38bdf8; }
+    .welcome p      {
+      color: #64748b;
+      margin-top: 8px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .suggestion-btn {
+      background: #111827;
+      border: 1px solid #1e293b;
+      color: #94a3b8;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+    }
+    .suggestion-btn:hover {
+      border-color: #38bdf8;
+      color: #38bdf8;
+    }
+
+    /* Message bubbles */
+    .message {
+      display: flex;
+      gap: 10px;
+      max-width: 100%;
+    }
+    .message.user { flex-direction: row-reverse; }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .avatar.bot  { background: #0f2942; }
+    .avatar.user-av { background: #0f2937; }
+
+    .bubble-wrap { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+
+    .bubble {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 14px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      max-width: 700px;
+    }
+    .message.user .bubble {
+      background: #0f2942;
+      border-color: #1e4976;
+    }
+
+    /* ── SQL Block ───────────────────────────────────────── */
+    .sql-block {
+      max-width: 700px;
+    }
+    .sql-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #0a0e1a;
+      border: 1px solid #1e293b;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-size: 11px;
+      color: #475569;
+      user-select: none;
+    }
+    .sql-toggle:hover { color: #38bdf8; border-color: #38bdf8; }
+    .sql-content {
+      display: none;
+      background: #060a14;
+      border: 1px solid #1e293b;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      padding: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #7dd3fc;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .sql-content.open { display: block; }
+
+    /* ── Results Table ───────────────────────────────────── */
+    .results-block {
+      max-width: 700px;
+      overflow-x: auto;
+    }
+    .results-meta {
+      font-size: 11px;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .results-table th {
+      background: #0f2942;
+      color: #38bdf8;
+      padding: 8px 12px;
+      text-align: left;
+      font-weight: 600;
+      border: 1px solid #1e4976;
+      white-space: nowrap;
+    }
+    .results-table td {
+      padding: 7px 12px;
+      border: 1px solid #1e293b;
+      color: #cbd5e1;
+      background: #0a0e1a;
+    }
+    .results-table tr:hover td { background: #0f1629; }
+
+    /* ── Explain Button ──────────────────────────────────── */
+    .explain-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      background: none;
+      border: 1px solid #1e4976;
+      border-radius: 8px;
+      color: #38bdf8;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .explain-btn:hover {
+      background: #0f2942;
+    }
+    .explain-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Explanation result */
+    .explanation-block {
+      max-width: 700px;
+      background: #0f1f35;
+      border: 1px solid #1e4976;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #bae6fd;
+    }
+    .explanation-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #38bdf8;
+      margin-bottom: 8px;
+    }
+
+    /* Typing indicator */
+    .typing .bubble {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      padding: 14px 16px;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      background: #38bdf8;
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
+    }
+
+    /* ── Input Bar ───────────────────────────────────────── */
+    .input-bar {
+      padding: 16px 24px;
+      background: #111827;
+      border-top: 1px solid #1e293b;
+      display: flex;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .input-bar input {
+      flex: 1;
+      background: #0a0e1a;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: #e2e8f0;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input-bar input:focus { border-color: #38bdf8; }
+    .input-bar input::placeholder { color: #334155; }
+
+    .send-btn {
+      background: #0284c7;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .send-btn:hover:not(:disabled) { background: #0369a1; }
+    .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Right Sidebar — Query History ──────────────────── */
+    .history-panel {
+      width: 240px;
+      background: #111827;
+      border-left: 1px solid #1e293b;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .history-header {
+      padding: 12px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #475569;
+      border-bottom: 1px solid #1e293b;
+    }
+    .history-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .history-item {
+      background: #0a0e1a;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 8px 10px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .history-item:hover { border-color: #38bdf8; }
+    .history-question {
+      font-size: 11px;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+    .history-meta {
+      font-size: 10px;
+      color: #334155;
+      margin-top: 4px;
+    }
+    .history-empty {
+      font-size: 12px;
+      color: #334155;
+      text-align: center;
+      padding: 20px;
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ───────────────────────────────────────────── -->
+<header>
+  <div class="header-left">
+    <span style="font-size:20px">💬</span>
+    <h1>DataDialogue</h1>
+    <span>Natural language to SQL</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span class="db-badge">🏢 Corp</span>
+    <span class="db-stats" id="db-stats">Loading...</span>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- ── Left Sidebar: Schema Explorer ────────────────── -->
+  <div class="sidebar">
+    <div class="sidebar-header">📋 Schema Explorer</div>
+    <div class="schema-list" id="schema-list">
+      <div style="color:#334155;font-size:12px;padding:12px">
+        Loading schema...
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Chat Area ─────────────────────────────────────── -->
+  <div class="chat-area">
+    <div class="messages" id="messages">
+
+      <!-- Welcome Screen -->
+      <div class="welcome" id="welcome">
+        <div class="icon">💬</div>
+        <h2>DataDialogue</h2>
+        <p>Ask anything about NexaCorp's data in plain English.<br>
+           I'll write the SQL, run it, and explain the results.</p>
+        <div class="suggestions">
+          <button class="suggestion-btn"
+            onclick="sendSuggestion(this)">
+            Who are our top 5 customers by revenue?
+          </button>
+          <button class="suggestion-btn"
+            onclick="sendSuggestion(this)">
+            Which sales rep closed the most deals in 2024?
+          </button>
+          <button class="suggestion-btn"
+            onclick="sendSuggestion(this)">
+            Show monthly revenue trend for 2024
+          </button>
+          <button class="suggestion-btn"
+            onclick="sendSuggestion(this)">
+            Which industry has the highest win rate?
+          </button>
+          <button class="suggestion-btn"
+            onclick="sendSuggestion(this)">
+            Which customers have the most support tickets?
+          </button>
+          <button class="suggestion-btn"
+            onclick="sendSuggestion(this)">
+            Who is below target this month?
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Input Bar -->
+    <div class="input-bar">
+      <input
+        type="text"
+        id="chat-input"
+        placeholder="Ask anything about your data..."
+        onkeydown="if(event.key==='Enter') sendMessage()"
+      />
+      <button class="send-btn" id="send-btn" onclick="sendMessage()">
+        Ask →
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Right Sidebar: Query History ─────────────────── -->
+  <div class="history-panel">
+    <div class="history-header">🕐 This Session</div>
+    <div class="history-list" id="history-list">
+      <div class="history-empty">No queries yet</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── Config ────────────────────────────────────────────
+  const API       = '';
+  let sessionId   = 'session_' + Date.now();
+  let queryCount  = 0;
+
+
+  // ── Schema Explorer ───────────────────────────────────
+
+  async function loadSchema() {
+    try {
+      const res    = await fetch(`${API}/schema`);
+      const tables = await res.json();
+      const el     = document.getElementById('schema-list');
+
+      el.innerHTML = tables.map(t => `
+        <div class="table-item">
+          <div class="table-header"
+               onclick="toggleTable(this)"
+               title="Click to see columns">
+            <div>
+              <div class="table-name">📊 ${t.table}</div>
+              <div class="table-count">${t.row_count} rows</div>
+            </div>
+            <span class="table-arrow">▶</span>
+          </div>
+          <div class="column-list">
+            ${t.columns.map(c => `
+              <div class="column-item">
+                <span class="col-name">${c.name}</span>
+                <span class="col-type">${c.type}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+
+    } catch(e) {
+      document.getElementById('schema-list').innerHTML =
+        '<div style="color:#475569;padding:12px;font-size:12px">Failed to load schema</div>';
+    }
+  }
+
+  function toggleTable(header) {
+    header.classList.toggle('open');
+    const cols = header.nextElementSibling;
+    cols.classList.toggle('open');
+  }
+
+
+  // ── DB Stats ──────────────────────────────────────────
+
+  async function loadStats() {
+    try {
+      const res  = await fetch(`${API}/stats`);
+      const data = await res.json();
+      document.getElementById('db-stats').textContent =
+        `${data.tables} tables · ${data.total_rows.toLocaleString()} rows`;
+    } catch(e) {}
+  }
+
+
+  // ── Query History ─────────────────────────────────────
+
+  // In-memory history — lives only for this browser session
+  const sessionHistory = [];
+
+  function addToHistory(question, rowCount) {
+    sessionHistory.unshift({ question, rowCount, time: new Date() });
+
+    const el = document.getElementById('history-list');
+    el.innerHTML = sessionHistory.map((h, i) => `
+      <div class="history-item" onclick="reuseQuery(${i})">
+        <div class="history-question">${h.question}</div>
+        <div class="history-meta">
+          ${h.rowCount} rows ·
+          ${h.time.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function reuseQuery(index) {
+    const q = sessionHistory[index];
+    document.getElementById('chat-input').value = q.question;
+    document.getElementById('chat-input').focus();
+  }
+
+
+  // ── Chat ──────────────────────────────────────────────
+
+  function removeWelcome() {
+    const w = document.getElementById('welcome');
+    if (w) w.remove();
+  }
+
+  function addUserMessage(text) {
+    removeWelcome();
+    const msgs = document.getElementById('messages');
+    const div  = document.createElement('div');
+    div.className = 'message user';
+    div.innerHTML = `
+      <div class="avatar user-av">👤</div>
+      <div class="bubble-wrap">
+        <div class="bubble">${escapeHtml(text)}</div>
+      </div>`;
+    msgs.appendChild(div);
+    scrollBottom();
+  }
+
+  function addTyping() {
+    const msgs = document.getElementById('messages');
+    const div  = document.createElement('div');
+    div.className = 'message typing';
+    div.id = 'typing';
+    div.innerHTML = `
+      <div class="avatar bot">💬</div>
+      <div class="bubble">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>`;
+    msgs.appendChild(div);
+    scrollBottom();
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('typing');
+    if (t) t.remove();
+  }
+
+  function addBotResponse(data) {
+    /*
+      This function builds the full bot response:
+      1. Text bubble (Claude's explanation)
+      2. SQL block (collapsible)
+      3. Results table (if query returned rows)
+      4. [Explain this] button (if results exist)
+    */
+    const msgs  = document.getElementById('messages');
+    const msgId = 'msg_' + Date.now();
+    const div   = document.createElement('div');
+    div.className = 'message';
+    div.id = msgId;
+
+    // ── Part 1: Text response ──────────────────────────
+    let html = `
+      <div class="avatar bot">💬</div>
+      <div class="bubble-wrap">
+        <div class="bubble">${escapeHtml(data.response)}</div>`;
+
+    // ── Part 2: SQL block (collapsible) ───────────────
+    // Only show if Claude actually generated SQL
+    if (data.sql_used) {
+      const sqlId = 'sql_' + Date.now();
+      html += `
+        <div class="sql-block">
+          <div class="sql-toggle" onclick="toggleSql('${sqlId}')">
+            <span>⚡</span>
+            <span>SQL Query</span>
+            <span style="margin-left:auto">▼</span>
+          </div>
+          <div class="sql-content" id="${sqlId}">${escapeHtml(data.sql_used)}</div>
+        </div>`;
+    }
+
+    // ── Part 3: Results table ─────────────────────────
+    // Built dynamically from whatever columns came back
+    // We don't know column names in advance
+    if (data.columns && data.columns.length > 0 && data.rows.length > 0) {
+      html += `
+        <div class="results-block">
+          <div class="results-meta">
+            ${data.row_count} row${data.row_count !== 1 ? 's' : ''} returned
+          </div>
+          <table class="results-table">
+            <thead>
+              <tr>
+                ${data.columns.map(c =>
+                  `<th>${escapeHtml(String(c))}</th>`
+                ).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${data.rows.map(row => `
+                <tr>
+                  ${row.map(cell =>
+                    `<td>${escapeHtml(formatCell(cell))}</td>`
+                  ).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>`;
+
+      // ── Part 4: Explain this button ─────────────────
+      const explainId = 'explain_' + Date.now();
+      html += `
+        <div>
+          <button class="explain-btn"
+                  id="${explainId}"
+                  onclick="explainResult('${explainId}', '${msgId}')">
+            💡 Explain this result
+          </button>
+        </div>`;
+    }
+
+    html += `</div>`; // close bubble-wrap
+    div.innerHTML = html;
+    msgs.appendChild(div);
+    scrollBottom();
+  }
+
+  function toggleSql(id) {
+    const el = document.getElementById(id);
+    el.classList.toggle('open');
+  }
+
+  function formatCell(val) {
+    // Format numbers with commas, keep nulls readable
+    if (val === null || val === undefined) return '—';
+    if (typeof val === 'number') {
+      if (Number.isInteger(val)) return val.toLocaleString();
+      return val.toFixed(2);
+    }
+    return String(val);
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+
+  // ── Explain This ──────────────────────────────────────
+
+  async function explainResult(btnId, msgId) {
+    const btn = document.getElementById(btnId);
+    btn.disabled = true;
+    btn.textContent = '⏳ Analysing...';
+
+    try {
+      const res  = await fetch(`${API}/explain`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ session_id: sessionId })
+      });
+      const data = await res.json();
+
+      // Replace button with explanation block
+      btn.outerHTML = `
+        <div class="explanation-block">
+          <div class="explanation-label">💡 Business Interpretation</div>
+          ${escapeHtml(data.explanation)}
+        </div>`;
+
+      scrollBottom();
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = '💡 Explain this result';
+    }
+  }
+
+
+  // ── Send Message ──────────────────────────────────────
+
+  async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const btn   = document.getElementById('send-btn');
+    const msg   = input.value.trim();
+    if (!msg) return;
+
+    addUserMessage(msg);
+    input.value = '';
+    btn.disabled = true;
+    addTyping();
+
+    try {
+      const res  = await fetch(`${API}/chat`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          message:    msg,
+          session_id: sessionId
+        })
+      });
+      const data = await res.json();
+
+      removeTyping();
+      addBotResponse(data);
+
+      // Add to session history if a query ran
+      if (data.row_count > 0) {
+        addToHistory(msg, data.row_count);
+      }
+
+    } catch(e) {
+      removeTyping();
+      addBotResponse({
+        response: 'Connection error. Is the server running?',
+        sql_used: null,
+        columns:  [],
+        rows:     [],
+        row_count: 0
+      });
+    } finally {
+      btn.disabled = false;
+      input.focus();
+    }
+  }
+
+  function sendSuggestion(btn) {
+    document.getElementById('chat-input').value =
+      btn.textContent.trim();
+    sendMessage();
+  }
+
+  function scrollBottom() {
+    const msgs = document.getElementById('messages');
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  // ── Init ──────────────────────────────────────────────
+  loadSchema();
+  loadStats();
+</script>
+</body>
+</html>
